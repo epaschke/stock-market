@@ -1,0 +1,18 @@
+{
+  "name": "stock-market",
+  "version": "1.0.0",
+  "description": "Stock market",
+  "main": "app.js",
+  "scripts": {
+    "test": "mocha --exit tests.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "chai": "^4.1.2",
+    "express": "^4.16.3",
+    "mocha": "^5.0.5",
+    "pg": "^7.4.1"
+  }
+}
