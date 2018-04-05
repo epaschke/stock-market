@@ -1,0 +1,24 @@
+DROP TABLE IF EXISTS portfolios;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS traders;
+
+CREATE TABLE traders(
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE portfolios(
+  id SERIAL PRIMARY KEY,
+  trader_id INTEGER REFERENCES traders NOT NULL,
+  ticker TEXT NOT NULL,
+  quantity INTEGER NOT NULL
+);
+
+CREATE TABLE orders(
+  id SERIAL PRIMARY KEY,
+  trader_id INTEGER REFERENCES traders NOT NULL,
+  type TEXT NOT NULL,
+  ticker TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  fulfilled INTEGER DEFAULT 0
+);
