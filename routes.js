@@ -1,4 +1,4 @@
-const { traders, orders } = require('./queries');
+const { traders, orders, portfolios } = require('./queries');
 const pool = require('./db');
 const express = require('express');
 const router = express.Router();
@@ -12,6 +12,16 @@ router.post('/traders', async (req, res, next) => {
     next(e);
   }
 });
+
+router.get('/portfolios/:ticker', async (req, res, next) => {
+  try {
+    let portfolio = await portfolios.get(req.params.ticker);
+    res.json({ portfolios: portfolio.rows});
+  }
+  catch (e) {
+    next(e);
+  }
+})
 
 router.get('/orders', async (req, res, next) => {
   try {

@@ -7,18 +7,26 @@ const traders = {
 };
 
 const portfolios = {
-  updateOrCreate: async (client, order, ordersFilled) => {
+  get: async (ticker) => {
+    return await pool.query(`SELECT * FROM portfolios WHERE ticker = $1 AND quantity > 0`, [ticker]);
+  },
+
+  updateOrCreate: async (client, order, ordersFilled, add) => {
     // check if there is already a portfolio for the ticker & trader_id
     let exists = (await client.query(`SELECT * FROM portfolios WHERE ticker = $1 AND trader_id = $2 FOR UPDATE`,
       [order.ticker, order.trader_id])).rows.length;
 
     let queryString;
     if (exists){
-      queryString = `UPDATE portfolios SET quantity = quantity + $3 WHERE ticker = $1 AND trader_id = $2`
+      queryString = `UPDATE portfolios SET quantity = quantity ${add ? '+' : '-'} $3 WHERE ticker = $1 AND trader_id = $2`
     } else {
       queryString = `INSERT INTO portfolios (trader_id, ticker, quantity) VALUES ($2, $1, $3)`;
     }
-    await client.query(queryString, [order.ticker, order.trader_id, ordersFilled || order.quantity]);
+    if (exists && add){
+      await client.query(queryString, [order.ticker, order.trader_id, ordersFilled || order.quantity]);
+    } else {
+      await client.query(queryString, [order.ticker, order.trader_id, order.quantity - ordersFilled]);
+    }
   }
 }
 
@@ -28,7 +36,6 @@ const orders = {
   },
 
   create: async (order) => {
-    if (order.ticker === 'B') console.log('b here');
     let client = await pool.connect();
     client.query('BEGIN');
 
@@ -36,14 +43,16 @@ const orders = {
     let oppType = order.type === 'bid' ? 'ask' : 'bid';
 
     // select potential matching orders
-    let matching = (await client.query(`SELECT * FROM orders WHERE ticker = $1 AND type = $2 AND fulfilled < quantity AND price ${oppType === 'ask' ? '<=' : '>='} $3 LIMIT $4 FOR UPDATE`,
-      [order.ticker, oppType, order.price, order.quantity])).rows;
+    let matching = (await client.query(`SELECT * FROM orders WHERE ticker = $1 AND type = $2 AND trader_id != $3 AND fulfilled < quantity AND price ${oppType === 'ask' ? '<=' : '>='} $4 LIMIT $5 FOR UPDATE`,
+      [order.ticker, oppType, order.trader_id, order.price, order.quantity])).rows;
 
     if (matching.length){ // There are orders that match the current order
       ordersFilled = await orders.update(client, matching, order);
-      await portfolios.updateOrCreate(client, order, ordersFilled, true);
     }
-    else if (!matching.length && order.type === 'ask') { // add or subtract from portfolio
+
+    if (!matching.length && order.type === 'ask') {
+      await portfolios.updateOrCreate(client, order, ordersFilled, true);
+    } else if (matching.length && order.type === 'ask') {
       await portfolios.updateOrCreate(client, order, ordersFilled, false);
     }
 
@@ -73,8 +82,7 @@ const orders = {
       // update order and portfolio for each matched order
       await client.query(`UPDATE orders SET fulfilled = fulfilled + $1 WHERE id = $2`,
         [possFilled, matching[cur].id]);
-      await client.query(`UPDATE portfolios SET quantity = quantity - $1 WHERE trader_id = $2 AND ticker = $3`,
-        [possFilled, matching[cur].trader_id, order.ticker]);
+      await portfolios.updateOrCreate(client, matching[cur], possFilled, false);
       cur++;
     }
 
@@ -82,4 +90,4 @@ const orders = {
   }
 };
 
-module.exports = { traders, orders };
+module.exports = { traders, orders, portfolios };
