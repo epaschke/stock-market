@@ -3,7 +3,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
 
-const { pool } = require('./db');
+const pool = require('./db');
 const { promisify } = require('util');
 const fs = require('fs');
 const readFile = promisify(fs.readFile);
@@ -59,9 +59,12 @@ describe("basic", () => {
       chai.expect(res.body.fulfilled).to.equal(0);
     });
 
-    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 1 })
+    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'B', price: 10, quantity: 1 })
     .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(1);
+      console.log(res.body)
+      chai.expect(res.body.fulfilled).to.equal(0);
     });
-  })
+  });
+
+
 });
