@@ -14,12 +14,13 @@ async function reset() {
 }
 
 describe("basic", () => {
+
   beforeEach(async () => {
     await reset();
-    await pool.query('INSERT INTO traders (id, name) VALUES ($1, $2), ($3, $4)', [1, "trader1", 2, "trader2"]);
+    await pool.query('INSERT INTO traders (name) VALUES ($1), ($2)', ["trader1", "trader2"]);
   });
 
-  it("beforeEach created traders", async function(){
+  it("beforeEach created traders", async () => {
     let res = await pool.query('SELECT * FROM traders');
     let traders = res.rows;
     chai.expect(traders.length).to.equal(2);
@@ -29,10 +30,22 @@ describe("basic", () => {
     chai.expect(traders[1].name).to.equal("trader2");
   })
 
-  it("trader post route works", async function() {
-    chai.request(app).post('/traders').send({ name: "NAME"}).end((err, res) => {
-      expect(err).to.be.null;
-      expect(res).to.have.status(200);
+  it("trader post route works", async () => {
+    await chai.request(app).post('/traders').send({ "name": "NAME"}).then((res) => {
+      chai.expect(res).to.have.status(200);
     });
   });
+
+  it("creation of one order works", async () => {
+    await chai.request(app).post('/orders').send({
+      trader_id: 1,
+      type: 'bid',
+      ticker: 'X',
+      price: 10,
+      quantity: 2
+    }).then((res) => {
+      chai.expect(res.body.fulfilled).to.equal(0);
+      chai.expect(res.body.trader_id).to.equal(1);
+    });
+  })
 });

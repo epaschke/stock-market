@@ -11,7 +11,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.post('/traders', async (req, res, next) =>{
   try {
     let trader = await traders.create(req.body);
-    console.log(trader.rows);
     res.json(trader.rows[0]);
   }
   catch (e) {
@@ -19,6 +18,25 @@ app.post('/traders', async (req, res, next) =>{
   }
 });
 
+app.get('/orders', async (req, res, next) => {
+  try {
+    let allOrders = await orders.getAll();
+    res.json({ orders: allOrders.rows });
+  }
+  catch (e) {
+    next(e);
+  }
+});
+
+app.post('/orders', async (req, res, next) => {
+  try {
+    let order = await orders.create(req.body);
+    res.json(order.rows[0]);
+  }
+  catch (e) {
+    next(e);
+  }
+})
 
 app.use((err, req, res, next) => {
   console.log('Error', err);

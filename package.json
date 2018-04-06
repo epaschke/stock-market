@@ -4,6 +4,7 @@
   "description": "Stock market",
   "main": "app.js",
   "scripts": {
+    "start": "node app",
     "test": "mocha --exit tests.js"
   },
   "author": "",
