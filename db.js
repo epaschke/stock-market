@@ -16,19 +16,34 @@ const orders = {
 
   create: async (order) => {
     let oppType = order.type === 'bid' ? 'ask' : 'bid';
-    let gtlt = oppType === 'ask' ? '<=' : '>=';
 
     let matching = await pool.query(`SELECT * FROM orders WHERE ticker = $1 AND type = $2
-      AND fulfilled < quantity AND price ${gtlt} $3 LIMIT $4`,
+      AND fulfilled < quantity AND price ${oppType === 'ask' ? '<=' : '>='} $3 LIMIT $4`,
       [order.ticker, oppType, order.price, order.quantity]);
 
-    if (!matching.length){
+    if (!matching.rows.length){
       return await pool.query(`INSERT INTO orders (trader_id, type, ticker, price, quantity)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
         [order.trader_id, order.type, order.ticker, order.price, order.quantity]);
     } else {
       // if there are matching ones
-      return { rows: [{success: true}]};
+      let ordersFilled = 0;
+      let cur = 0;
+      while (ordersFilled < order.quantity && cur < matching.rows.length){
+        let poss = matching.rows[cur].quantity - matching.rows[cur].fulfilled;
+        let possFilled = 0;
+        while (poss && ordersFilled < order.quantity) {
+          ordersFilled++;
+          possFilled++;
+          poss--;
+        }
+        await pool.query(`UPDATE orders SET fulfilled = fulfilled + $1 WHERE id = $2`,
+          [possFilled, matching.rows[cur].id]);
+        cur++;
+      }
+      return await pool.query(`INSERT INTO orders (trader_id, type, ticker, price, quantity, fulfilled)
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [order.trader_id, order.type, order.ticker, order.price, order.quantity, ordersFilled]);
     }
   }
 };

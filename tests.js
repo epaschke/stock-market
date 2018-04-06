@@ -48,4 +48,26 @@ describe("basic", () => {
       chai.expect(res.body.trader_id).to.equal(1);
     });
   })
+
+  it("creation of four matching orders works", async () => {
+    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })
+    .then((res) => {
+      chai.expect(res.body.fulfilled).to.equal(0);
+    });
+
+    await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
+    .then((res) => {
+      chai.expect(res.body.fulfilled).to.equal(2);
+    });
+
+    await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
+    .then((res) => {
+      chai.expect(res.body.fulfilled).to.equal(0);
+    });
+
+    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 1 })
+    .then((res) => {
+      chai.expect(res.body.fulfilled).to.equal(1);
+    });
+  })
 });
