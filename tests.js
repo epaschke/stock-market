@@ -44,18 +44,15 @@ describe("basic", () => {
   });
 
   it("creation of 2 matching orders", async () => {
-    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(0);
-    });
+    let res1 = await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })
+    chai.expect(res1.body.fulfilled).to.equal(0);
+
 
     let portfolio1 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'X'`, [1])).rows;
     chai.expect(portfolio1.length).to.equal(0);
 
-    await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(2);
-    });
+    let res2 = await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
+    chai.expect(res2.body.fulfilled).to.equal(2);
 
     let portfolio2 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'X'`, [2])).rows;
     chai.expect(portfolio2[0].quantity).to.equal(0);
@@ -64,39 +61,26 @@ describe("basic", () => {
 
   it("creation of matching and unmatching orders works", async () => {
     await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(0);
-    });
     let portfolio1 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'X'`, [1])).rows;
     chai.expect(portfolio1.length).to.equal(0);
 
     await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(2);
-    });
 
     let portfolio2 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'X'`, [2])).rows;
     chai.expect(portfolio2[0].quantity).to.equal(0);
 
     await chai.request(app).post('/orders').send({ trader_id: 2, type: 'ask', ticker: 'X', price: 10, quantity: 2 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(0);
-    });
 
     let portfolio3 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'X'`, [2])).rows;
     chai.expect(portfolio3[0].quantity).to.equal(2);
 
     await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'B', price: 10, quantity: 1 })
-    .then((res) => {
-      chai.expect(res.body.fulfilled).to.equal(0);
-    });
 
     let portfolio4 = (await pool.query(`SELECT * FROM portfolios WHERE trader_id = $1 AND ticker = 'B'`, [1])).rows;
     chai.expect(portfolio4.length).to.equal(0);
 
-    await chai.request(app).get('/portfolios/X').then(res => {
+    let res = await chai.request(app).get('/portfolios/X')
       chai.expect(res.body.portfolios.length).to.equal(1);
-    });
   });
 
 
