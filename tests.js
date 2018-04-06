@@ -8,14 +8,13 @@ const { promisify } = require('util');
 const fs = require('fs');
 const readFile = promisify(fs.readFile);
 
-async function reset() {
+const reset = async () => {
   let script = await readFile('reset.sql', 'utf8');
   await pool.query(script);
-}
+};
 
 describe("basic", () => {
-
-  beforeEach(async () => {
+  beforeEach(async function() {
     await reset();
     await pool.query('INSERT INTO traders (name) VALUES ($1), ($2)', ["trader1", "trader2"]);
   });
@@ -37,17 +36,12 @@ describe("basic", () => {
   });
 
   it("creation of one order works", async () => {
-    await chai.request(app).post('/orders').send({
-      trader_id: 1,
-      type: 'bid',
-      ticker: 'X',
-      price: 10,
-      quantity: 2
-    }).then((res) => {
+    await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })
+    .then((res) => {
       chai.expect(res.body.fulfilled).to.equal(0);
       chai.expect(res.body.trader_id).to.equal(1);
     });
-  })
+  });
 
   it("creation of four matching orders works", async () => {
     await chai.request(app).post('/orders').send({ trader_id: 1, type: 'bid', ticker: 'X', price: 10, quantity: 2 })

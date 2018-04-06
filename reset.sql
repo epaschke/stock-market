@@ -11,8 +11,7 @@ CREATE TABLE portfolios(
   id SERIAL PRIMARY KEY,
   trader_id INTEGER REFERENCES traders NOT NULL,
   ticker TEXT NOT NULL,
-  quantity INTEGER NOT NULL,
-  price NUMERIC NOT NULL
+  quantity INTEGER NOT NULL
 );
 
 CREATE TABLE orders(

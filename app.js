@@ -2,13 +2,13 @@
 
 const express = require('express');
 const app = express();
-const { pool, traders, orders, portfolios } = require('./db');
+const { pool, traders, orders } = require('./db');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.post('/traders', async (req, res, next) =>{
+app.post('/traders', async (req, res, next) => {
   try {
     let trader = await traders.create(req.body);
     res.json(trader.rows[0]);

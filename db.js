@@ -22,6 +22,17 @@ const orders = {
       [order.ticker, oppType, order.price, order.quantity]);
 
     if (!matching.rows.length){
+      if (order.type === 'ask'){
+        let exists = await pool.query(`SELECT * FROM portfolios WHERE ticker = $1 AND trader_id = $2`,
+          [order.ticker, order.trader_id]);
+        let string;
+        if (exists.rows.length){
+          string = `UPDATE portfolios SET quantity = quantity + $3 WHERE ticker = $1 AND trader_id = $2 RETURNING *`
+        } else {
+          string = `INSERT INTO portfolios (trader_id, ticker, quantity) VALUES ($2, $1, $3) RETURNING *`;
+        }
+        await pool.query(string, [order.ticker, order.trader_id, order.quantity]);
+      }
       return await pool.query(`INSERT INTO orders (trader_id, type, ticker, price, quantity)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
         [order.trader_id, order.type, order.ticker, order.price, order.quantity]);
@@ -39,8 +50,19 @@ const orders = {
         }
         await pool.query(`UPDATE orders SET fulfilled = fulfilled + $1 WHERE id = $2`,
           [possFilled, matching.rows[cur].id]);
+        await pool.query(`UPDATE portfolios SET quantity = quantity - $1 WHERE trader_id = $2 AND ticker = $3`,
+          [possFilled, matching.rows[cur].trader_id, order.ticker]);
         cur++;
       }
+      let exists = await pool.query(`SELECT * FROM portfolios WHERE ticker = $1 AND trader_id = $2`,
+        [order.ticker, order.trader_id]);
+      let string;
+      if (exists.rows.length){
+        string = `UPDATE portfolios SET quantity = quantity + $3 WHERE ticker = $1 AND trader_id = $2 RETURNING *`
+      } else {
+        string = `INSERT INTO portfolios (trader_id, ticker, quantity) VALUES ($2, $1, $3) RETURNING *`;
+      }
+      await pool.query(string, [order.ticker, order.trader_id, ordersFilled]);
       return await pool.query(`INSERT INTO orders (trader_id, type, ticker, price, quantity, fulfilled)
         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [order.trader_id, order.type, order.ticker, order.price, order.quantity, ordersFilled]);
@@ -48,15 +70,8 @@ const orders = {
   }
 };
 
-const portfolios = {
-  create: async (portfolio) => {
-    // let res = await pool.query(``, [])
-  }
-};
-
 module.exports = {
   pool,
   traders,
-  orders,
-  portfolios
+  orders
 }
