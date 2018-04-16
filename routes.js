@@ -1,12 +1,12 @@
-const { traders, orders, portfolios } = require('./queries');
+const { traderFns, orderFns, portfolioFns } = require('./queries');
 const pool = require('./db');
 const express = require('express');
 const router = express.Router();
 
 router.post('/traders', async (req, res, next) => {
   try {
-    let trader = await traders.create(req.body);
-    res.json(trader.rows[0]);
+    let trader = (await traderFns.create(req.body)).rows[0];
+    res.json(trader);
   }
   catch (e) {
     next(e);
@@ -15,8 +15,8 @@ router.post('/traders', async (req, res, next) => {
 
 router.get('/portfolios/:ticker', async (req, res, next) => {
   try {
-    let portfolio = await portfolios.get(req.params.ticker);
-    res.json({ portfolios: portfolio.rows});
+    let portfolios = (await portfolioFns.get(req.params.ticker)).rows;
+    res.json({ portfolios });
   }
   catch (e) {
     next(e);
@@ -25,8 +25,8 @@ router.get('/portfolios/:ticker', async (req, res, next) => {
 
 router.get('/orders', async (req, res, next) => {
   try {
-    let allOrders = await orders.getAll();
-    res.json({ orders: allOrders.rows });
+    let orders = (await orderFns.getAll()).rows;
+    res.json({ orders });
   }
   catch (e) {
     next(e);
@@ -35,8 +35,8 @@ router.get('/orders', async (req, res, next) => {
 
 router.post('/orders', async (req, res, next) => {
   try {
-    let order = await orders.create(req.body);
-    res.json(order.rows[0]);
+    let order = (await orderFns.create(req.body)).rows[0];
+    res.json(order);
   }
   catch (e) {
     next(e);
