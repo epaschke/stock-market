@@ -21,7 +21,7 @@ router.get('/portfolios/:ticker', async (req, res, next) => {
   catch (e) {
     next(e);
   }
-})
+});
 
 router.get('/orders', async (req, res, next) => {
   try {

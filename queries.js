@@ -67,12 +67,12 @@ const orders = {
 
   update: async (client, matching, order) => {
     // loop through matching orders until there are no more or until the current order has been filled
-    let cur = 0;
     let ordersFilled = 0;
-    while (ordersFilled < order.quantity && cur < matching.length){
-      // subtract number filled from the quantity available
-      let poss = matching[cur].quantity - matching[cur].fulfilled;
+    for (let matched of matching){
+      let poss = matched.quantity - matched.fulfilled;
       let possFilled = 0;
+
+      // subtract number filled from the quantity available
       while (poss && ordersFilled < order.quantity) {
         ordersFilled++;
         possFilled++;
@@ -80,12 +80,14 @@ const orders = {
       }
 
       // update order and portfolio for each matched order
-      await client.query(`UPDATE orders SET fulfilled = fulfilled + $1 WHERE id = $2`,
-        [possFilled, matching[cur].id]);
-      await portfolios.updateOrCreate(client, matching[cur], possFilled, false);
-      cur++;
-    }
+      await client.query(`UPDATE orders SET fulfilled = fulfilled + $1 WHERE id = $2`, [possFilled, matched.id]);
+      await portfolios.updateOrCreate(client, matched, possFilled, false);
 
+      //break from loop
+      if (ordersFilled >= order.quantity){
+        break;
+      }
+    }
     return ordersFilled;
   }
 };
