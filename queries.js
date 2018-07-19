@@ -119,4 +119,5 @@ const orders = {
 module.exports = {
   traderFns: traders,
   orderFns: orders,
-  portfolioFns: portfolios };
+  portfolioFns: portfolios
+};
